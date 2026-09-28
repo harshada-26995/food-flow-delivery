@@ -11,6 +11,13 @@ const RiderContext = createContext();
  */
 const TOKEN_KEY = 'foodflow_rider_token';
 
+/** Backend base URL: respects VITE_API_URL or defaults to production Render backend */
+const API_BASE_URL = (
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_BACKEND_URL ||
+  (import.meta.env.PROD ? 'https://food-flow-backend-aj7e.onrender.com' : '')
+).replace(/\/+$/, '');
+
 /** Sign-in endpoints answer 401 for a wrong or expired code, not a dead session. */
 const AUTH_PREFIX = '/api/delivery/auth/';
 
@@ -57,11 +64,12 @@ export const RiderProvider = ({ children }) => {
     async (path, options = {}) => {
       const current = localStorage.getItem(TOKEN_KEY) || '';
       const { body, ...rest } = options;
-      const isAuthCall = path.startsWith(AUTH_PREFIX);
+      const isAuthCall = path.includes(AUTH_PREFIX);
+      const url = path.startsWith('http') ? path : `${API_BASE_URL}${path}`;
 
       let res;
       try {
-        res = await fetch(path, {
+        res = await fetch(url, {
           ...rest,
           headers: {
             'Content-Type': 'application/json',
