@@ -1,0 +1,455 @@
+{
+  "info": {
+    "_postman_id": "b3e9a124-7f12-4c28-98e6-delivery-panel-api",
+    "name": "FoodFlow - Delivery Panel & Partner APIs",
+    "description": "Complete Postman Collection for FoodFlow Delivery Panel and Rider APIs. Includes OTP authentication, order management, status updates, live GPS location sharing, earnings, and rider management.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "rider_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "rider_phone",
+      "value": "9876543210",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Send OTP (Request Login Code)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{rider_phone}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/auth/send-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "auth", "send-otp"]
+            },
+            "description": "Requests a 6-digit OTP sent to the rider's phone number. In development mode, the OTP code is returned directly in the response."
+          },
+          "response": []
+        },
+        {
+          "name": "Verify OTP (Sign In)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.token) {",
+                  "        pm.collectionVariables.set('rider_token', jsonData.token);",
+                  "        console.log('Saved rider_token to collection variables');",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{rider_phone}}\",\n  \"otp\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/auth/verify-otp",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "auth", "verify-otp"]
+            },
+            "description": "Verifies the 6-digit OTP code for the approved delivery partner and issues a JWT token. Automatically saves `rider_token`."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{rider_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "auth", "logout"]
+            },
+            "description": "Signs out the rider and deletes the active GPS live location sharing fix."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Rider Profile & Availability",
+      "item": [
+        {
+          "name": "Get Rider Profile (Me)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{rider_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "me"]
+            },
+            "description": "Retrieves the rider profile details, current status (ONLINE/OFFLINE/ON_DELIVERY), rating, completed deliveries, and payout per delivery configuration."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Availability (Online / Offline)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{rider_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ONLINE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/availability",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "availability"]
+            },
+            "description": "Sets the rider availability status to ONLINE or OFFLINE. Cannot be set to OFFLINE if the rider currently has an active order on delivery."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Delivery Jobs & Orders",
+      "item": [
+        {
+          "name": "Get Active Delivery Jobs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data && jsonData.data.length > 0) {",
+                  "        pm.collectionVariables.set('order_id', jsonData.data[0].id);",
+                  "        console.log('Saved first active order ID: ' + jsonData.data[0].id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{rider_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/orders?scope=active",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "orders"],
+              "query": [
+                {
+                  "key": "scope",
+                  "value": "active",
+                  "description": "active or history"
+                },
+                {
+                  "key": "limit",
+                  "value": "50",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Fetches active orders assigned to this delivery partner (e.g. PREPARING, READY, OUT_FOR_DELIVERY)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Delivery History",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{rider_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/orders?scope=history",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "orders"],
+              "query": [
+                {
+                  "key": "scope",
+                  "value": "history"
+                }
+              ]
+            },
+            "description": "Fetches past delivered or cancelled orders assigned to this delivery partner."
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Order Picked Up (OUT_FOR_DELIVERY)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{rider_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"OUT_FOR_DELIVERY\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/orders/{{order_id}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "orders", "{{order_id}}", "status"]
+            },
+            "description": "Advances an assigned order from READY to OUT_FOR_DELIVERY when the rider collects food from the restaurant."
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Order Delivered (DELIVERED)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{rider_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"DELIVERED\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/orders/{{order_id}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "orders", "{{order_id}}", "status"]
+            },
+            "description": "Marks an OUT_FOR_DELIVERY order as DELIVERED at the customer's doorstep, releasing the rider and crediting their delivery payout."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Live Location Sharing",
+      "item": [
+        {
+          "name": "Get Location Sharing Status",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{rider_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/location",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "location"]
+            },
+            "description": "Checks whether live location sharing is active, when the last fix was received, and which orders are currently being tracked."
+          },
+          "response": []
+        },
+        {
+          "name": "Update GPS Location Fix",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{rider_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lat\": 19.9975,\n  \"lng\": 73.7898,\n  \"accuracy\": 15,\n  \"heading\": 90,\n  \"speed\": 22.5,\n  \"timestamp\": 1727500000000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/location",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "location"]
+            },
+            "description": "Sends a live GPS coordinate fix from the rider device. Allowed only when the rider is carrying an active delivery."
+          },
+          "response": []
+        },
+        {
+          "name": "Stop Location Sharing",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{rider_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/location",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "location"]
+            },
+            "description": "Stops location sharing and deletes the stored real-time location fix from the database."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Earnings & Payouts",
+      "item": [
+        {
+          "name": "Get Earnings & Summary",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{rider_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/earnings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "delivery", "earnings"]
+            },
+            "description": "Fetches payout per delivery, today's deliveries & earnings count, lifetime earnings, and recent delivered orders list with individual payouts."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
