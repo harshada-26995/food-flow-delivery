@@ -52,7 +52,7 @@ const JOB_ORDER = { OUT_FOR_DELIVERY: 0, READY: 1, PREPARING: 2, ACCEPTED: 3, PL
 export default function DashboardView() {
   const {
     partner, jobs, history, earnings, loading, refreshError,
-    refresh, logout, setAvailability, advanceJob, api,
+    refresh, logout, setAvailability, advanceJob, api, isDemo,
   } = useRider();
 
   // Live location: only while a job allows it (server-decided via shareLocation).
@@ -130,12 +130,19 @@ export default function DashboardView() {
     <>
       <header className="topbar">
         <div className="topbar-inner">
-          <span className="wordmark">
-            <span className="logo-mark" aria-hidden="true">
-              <UtensilsCrossed size={16} strokeWidth={2.25} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="wordmark">
+              <span className="logo-mark" aria-hidden="true">
+                <UtensilsCrossed size={16} strokeWidth={2.25} />
+              </span>
+              <span>Food<span className="accent">Flow</span></span>
             </span>
-            <span>Food<span className="accent">Flow</span></span>
-          </span>
+            {isDemo && (
+              <span className="demo-mode-badge" title="Running in instant interactive demo mode">
+                ⚡ Demo Mode
+              </span>
+            )}
+          </div>
           <div className="topbar-actions">
             <button className="icon-btn" onClick={() => refresh(false)} title="Refresh" aria-label="Refresh" disabled={loading}>
               <RefreshCw size={18} className={loading ? 'spin' : ''} />

@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useRider } from '../context/RiderContext';
-import { UtensilsCrossed, Phone, ShieldCheck, Clock, RefreshCw } from 'lucide-react';
+import { UtensilsCrossed, Phone, ShieldCheck, Clock, RefreshCw, Zap, Bike, Sparkles, ArrowRight } from 'lucide-react';
 
 /**
  * Rider sign-in: phone number, then a six-digit code.
  *
- * No password and no self-signup. A rider exists because the platform or a
- * restaurant created the record and the platform approved them — the phone
- * number on that record is what proves identity. An unknown or unapproved
- * number is refused at the verify step, never at the "send code" step, so
- * nobody can use this screen to discover which numbers are registered riders.
+ * Includes instant 1-click Demo Rider Logins for instant evaluation and testing.
  */
 
 const RESEND_COOLDOWN_SECONDS = 30;
@@ -20,7 +16,7 @@ const countdown = (s) => `${Math.floor(Math.max(0, s) / 60)}:${String(Math.max(0
 const isValidMobile = (d) => /^[6-9]\d{9}$/.test(d);
 
 export default function LoginView() {
-  const { sendOtp, verifyOtp, showToast, signOutReason, clearSignOutReason } = useRider();
+  const { sendOtp, verifyOtp, loginDemo, showToast, signOutReason, clearSignOutReason } = useRider();
 
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
@@ -53,11 +49,11 @@ export default function LoginView() {
       const res = await sendOtp(digits);
       const ttl = Number(res.expiresInSeconds) || FALLBACK_TTL_SECONDS;
       setSent(true);
-      setOtp('');
+      setOtp(res.otp || '');
       setDevCode(res.otp || '');
       setExpiresAt(Date.now() + ttl * 1000);
       setResendAt(Date.now() + RESEND_COOLDOWN_SECONDS * 1000);
-      showToast(res.otp ? `Development code: ${res.otp}` : `Code sent to ${formatPhone(digits)}`);
+      showToast(res.otp ? `Code: ${res.otp}` : `Code sent to ${formatPhone(digits)}`);
     } catch (err) {
       setError(
         err.status === 429
@@ -89,11 +85,16 @@ export default function LoginView() {
     try {
       await verifyOtp(digits, otp);
     } catch (err) {
-      // The server's own reason: incorrect code, expired code, too many tries.
       setError(err.message || 'Sign-in failed. Try again.');
     } finally {
       setBusy(false);
     }
+  };
+
+  const setDemoNumber = (num) => {
+    setPhone(num);
+    setError('');
+    clearSignOutReason();
   };
 
   return (
@@ -122,37 +123,100 @@ export default function LoginView() {
         {(error || signOutReason) && <div className="alert error">{error || signOutReason}</div>}
 
         {!sent ? (
-          <form onSubmit={onSendCode}>
-            <label className="field-label" htmlFor="rider-phone">Mobile number</label>
-            <div className="input-wrap">
-              <Phone size={17} className="input-icon" />
-              <span className="input-prefix">+91</span>
-              <input
-                id="rider-phone"
-                autoComplete="tel-national"
-                className="input has-prefix"
-                type="tel"
-                inputMode="numeric"
-                autoFocus
-                placeholder="98765 43210"
-                value={formatPhone(digits)}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-              />
+          <>
+            <form onSubmit={onSendCode}>
+              <label className="field-label" htmlFor="rider-phone">Mobile number</label>
+              <div className="input-wrap">
+                <Phone size={17} className="input-icon" />
+                <span className="input-prefix">+91</span>
+                <input
+                  id="rider-phone"
+                  autoComplete="tel-national"
+                  className="input has-prefix"
+                  type="tel"
+                  inputMode="numeric"
+                  autoFocus
+                  placeholder="98765 43210"
+                  value={formatPhone(digits)}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                />
+              </div>
+
+              {/* Demo number quick fill chips */}
+              <div className="demo-chips-wrap">
+                <span className="demo-chips-label">Quick Demo Numbers</span>
+                <div className="demo-chips-row">
+                  <button
+                    type="button"
+                    className={`demo-phone-chip ${digits === '9876543210' ? 'active' : ''}`}
+                    onClick={() => setDemoNumber('9876543210')}
+                  >
+                    <Bike size={13} /> 98765 43210 (Rohan)
+                  </button>
+                  <button
+                    type="button"
+                    className={`demo-phone-chip ${digits === '9876543211' ? 'active' : ''}`}
+                    onClick={() => setDemoNumber('9876543211')}
+                  >
+                    <Bike size={13} /> 98765 43211 (Amit)
+                  </button>
+                </div>
+              </div>
+
+              <button className="btn primary block big" disabled={busy || !isValidMobile(digits)}>
+                {busy ? 'Sending code…' : 'Send code'}
+              </button>
+
+              <p className="fine-print">
+                <ShieldCheck size={14} /> Only approved delivery partners can sign in here.
+              </p>
+            </form>
+
+            {/* 1-Click Instant Demo Login Section */}
+            <div className="demo-section">
+              <div className="demo-divider">
+                <span>Or Instant Demo Access</span>
+              </div>
+              <div className="demo-cards-grid">
+                <button
+                  type="button"
+                  className="demo-login-card"
+                  onClick={() => loginDemo('active')}
+                >
+                  <div className="demo-info">
+                    <span className="demo-title">
+                      <Zap size={15} color="var(--p)" /> Demo Rider (Active Orders)
+                    </span>
+                    <span className="demo-desc">Rohan Sharma · Honda Activa · 2 Active Trips</span>
+                  </div>
+                  <span className="demo-action">
+                    Launch <ArrowRight size={14} />
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  className="demo-login-card"
+                  onClick={() => loginDemo('new')}
+                >
+                  <div className="demo-info">
+                    <span className="demo-title">
+                      <Sparkles size={15} color="#15803d" /> Demo Rider (Available / New)
+                    </span>
+                    <span className="demo-desc">Amit Patil · TVS Jupiter · Ready for Dispatch</span>
+                  </div>
+                  <span className="demo-action">
+                    Launch <ArrowRight size={14} />
+                  </span>
+                </button>
+              </div>
             </div>
-
-            <button className="btn primary block big" disabled={busy || !isValidMobile(digits)}>
-              {busy ? 'Sending code…' : 'Send code'}
-            </button>
-
-            <p className="fine-print">
-              <ShieldCheck size={14} /> Only approved delivery partners can sign in here.
-            </p>
-          </form>
+          </>
         ) : (
           <form onSubmit={onVerify}>
             {devCode && (
               <div className="alert info">
-                Development mode. Your code is <strong>{devCode}</strong>
+                Development code: <strong>{devCode}</strong>
               </div>
             )}
 
@@ -209,3 +273,4 @@ export default function LoginView() {
     </div>
   );
 }
+

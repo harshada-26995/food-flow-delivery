@@ -439,3 +439,151 @@ strong, b { font-weight: 600; }
   .location-card .btn { width: auto; margin-top: 0; flex-shrink: 0; }
   .auth-card { padding: 32px 28px 28px; }
 }
+
+/* ---- Quick Demo Logins & Testing --------------------------------------- */
+.demo-section {
+  margin-top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.demo-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted-light);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 8px 0 4px;
+}
+
+.demo-divider::before,
+.demo-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.demo-cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.demo-login-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  font-family: inherit;
+  width: 100%;
+}
+
+.demo-login-card:hover {
+  background: var(--p-soft);
+  border-color: var(--p-border);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -4px rgba(232, 89, 12, 0.15);
+}
+
+.demo-login-card .demo-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.demo-login-card .demo-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.demo-login-card .demo-desc {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.demo-login-card .demo-action {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--p);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.demo-chips-wrap {
+  margin: 10px 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.demo-chips-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.demo-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.demo-phone-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.demo-phone-chip:hover {
+  border-color: var(--p);
+  color: var(--p);
+  background: var(--p-soft);
+}
+
+.demo-phone-chip.active {
+  background: var(--p-soft);
+  border-color: var(--p);
+  color: var(--p);
+  font-weight: 600;
+}
+
+.demo-mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fef08a;
+  color: #854d0e;
+  font-size: 11px;
+  font-weight: 600;
+}
+
